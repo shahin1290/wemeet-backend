@@ -1,4 +1,11 @@
-import { Application, json, urlencoded } from "express";
+import {
+  Application,
+  json,
+  urlencoded,
+  Request,
+  Response,
+  NextFunction,
+} from "express";
 import http from "http";
 import cors from "cors";
 import compression from "compression";
@@ -7,9 +14,18 @@ import hpp from "hpp";
 import cookieSession from "cookie-session";
 import HTTP_STATUS from "http-status-codes";
 import "express-async-errors";
+import Logger from "bunyan";
 import { config } from "./config";
+import { Server } from "socket.io";
+import { createClient } from "redis";
+import { createAdapter } from "@socket.io/redis-adapter";
+import {
+  CustomError,
+  IErrorResponse,
+} from "./shared/globals/helpers/error-handler";
 
 const SERVER_PORT = 5000;
+const log: Logger = config.createLogger("server");
 
 export class WeMeetServer {
   private app: Application;
@@ -52,20 +68,63 @@ export class WeMeetServer {
     app.use(urlencoded({ extended: true, limit: "50mb" }));
   }
   private routeMidleware(app: Application): void {}
-  private globalErrorHandler(app: Application): void {}
+
+  private globalErrorHandler(app: Application): void {
+    app.all("*", (req: Request, res: Response) => {
+      res
+        .status(HTTP_STATUS.NOT_FOUND)
+        .json({ message: `${req.originalUrl} not found` });
+    });
+
+    app.use(
+      (
+        error: IErrorResponse,
+        _req: Request,
+        res: Response,
+        next: NextFunction
+      ) => {
+        log.error(error);
+        if (error instanceof CustomError) {
+          return res.status(error.statusCode).json(error.serializeErrors());
+        }
+        next();
+      }
+    );
+  }
 
   private async startServer(app: Application): Promise<void> {
     try {
       const httpServer: http.Server = new http.Server(app);
+      const socketIO: Server = await this.createSocketIO(httpServer);
       this.startHttpServer(httpServer);
+      this.socketIOConnections(socketIO);
     } catch (error) {
-      console.log(error);
+      log.error(error);
     }
   }
-  private createSocketIO(httpServer: http.Server): void {}
+
+  private async createSocketIO(httpServer: http.Server): Promise<Server> {
+    const io: Server = new Server(httpServer, {
+      cors: {
+        origin: config.CLIENT_URL,
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      },
+    });
+
+    const pubClient = createClient({ url: config.REDIS_HOST });
+    const subClient = pubClient.duplicate();
+    await Promise.all([pubClient.connect(), subClient.connect()]);
+    io.adapter(createAdapter(pubClient, subClient));
+    return io;
+  }
+
   private startHttpServer(httpServer: http.Server): void {
+    log.info(`Server has started with process ${process.pid}`);
+
     httpServer.listen(SERVER_PORT, () =>
-      console.log(`Server running on port ${SERVER_PORT}`)
+      log.info(`Server running on port ${SERVER_PORT}`)
     );
   }
+
+  private socketIOConnections(io: Server): void {}
 }
