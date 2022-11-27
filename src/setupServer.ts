@@ -8,6 +8,7 @@ import cookieSession from 'cookie-session';
 import HTTP_STATUS from 'http-status-codes';
 import 'express-async-errors';
 import Logger from 'bunyan';
+import applicationRoutes from '@root/routes';
 import { config } from '@root/config';
 import { Server } from 'socket.io';
 import { createClient } from 'redis';
@@ -58,7 +59,9 @@ export class WeMeetServer {
     app.use(urlencoded({ extended: true, limit: '50mb' }));
   }
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  private routesMidleware(app: Application): void {}
+  private routesMidleware(app: Application): void {
+    applicationRoutes(app);
+  }
 
   private globalErrorHandler(app: Application): void {
     app.all('*', (req: Request, res: Response) => {
