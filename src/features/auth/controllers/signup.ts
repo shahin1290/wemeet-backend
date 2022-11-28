@@ -11,7 +11,6 @@ import { BadRequestError } from '@global/helpers/error-handler';
 import HTTP_STATUS from 'http-status-codes';
 import { IUserDocument } from '@user/interfaces/user.interface';
 import { UserCache } from '@service/redis/user.cache';
-import { omit } from 'lodash';
 import { authQueue } from './../../../shared/services/queues/auth.queue';
 import { userQueue } from '@service/queues/user.queue';
 import { config } from '@root/config';
@@ -53,14 +52,13 @@ export class SignUp {
     await userCache.saveUserToCache(`${userObjectId}`, uId, userDataForCache);
 
     // Add to database
-    omit(userDataForCache, ['uid', 'username', 'email', 'avatarColor', 'password']);
-
     authQueue.addAuthUserJob('addAuthUserToDB', { value: authData });
     userQueue.addUserJob('addUserToDB', { value: userDataForCache });
 
     const userJwt: string = SignUp.prototype.signToken(authData, userObjectId);
     req.session = { jwt: userJwt };
-    console.log(req.session);
+
+    res.set('Set-Cookie', `session=${userJwt}`);
 
     res.status(HTTP_STATUS.CREATED).json({ message: 'User created successfully', user: userDataForCache, token: userJwt });
   }

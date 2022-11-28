@@ -34,12 +34,14 @@ export class WeMeetServer {
   }
 
   private securityMidleware(app: Application): void {
+    app.set('trust proxy', 1);
     app.use(
       cookieSession({
         name: 'session',
         keys: [config.SECRET_KEY_ONE!, config.SECRET_KEY_TWO!],
         maxAge: 24 * 7 * 3600000,
         secure: config.NODE_ENV !== 'development'
+        // sameSite: 'none' // comment this line when running the server locally
       })
     );
     app.use(hpp());

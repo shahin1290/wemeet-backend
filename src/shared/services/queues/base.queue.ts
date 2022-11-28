@@ -14,8 +14,7 @@ import { IEmailJob, IUserJob } from '@user/interfaces/user.interface';
 // import { IFileImageJobData } from '@image/interfaces/image.interface';
 // import { IChatJobData, IMessageData } from '@chat/interfaces/chat.interface';
 
-type IBaseJobData =
-  | IAuthJob
+type IBaseJobData = IAuthJob;
 //   | IEmailJob
 //   | IPostJobData
 //   | IReactionJob
@@ -70,4 +69,3 @@ export abstract class BaseQueue {
     this.queue.process(name, concurrency, callback);
   }
 }
-

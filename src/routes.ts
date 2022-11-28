@@ -1,4 +1,6 @@
 import { authRoutes } from '@auth/routes/authRoutes';
+import { currentUserRoutes } from '@auth/routes/currentRoutes';
+import { authMiddleware } from '@global/helpers/auth-middleware';
 import { serverAdapter } from '@service/queues/base.queue';
 import { Application } from 'express';
 
@@ -12,11 +14,10 @@ export default (app: Application) => {
     // app.use('', healthRoutes.instance());
     // app.use('', healthRoutes.fiboRoutes());
 
-
     app.use(BASE_PATH, authRoutes.routes());
-    // app.use(BASE_PATH, authRoutes.signoutRoute());
+    app.use(BASE_PATH, authRoutes.signoutRoute());
 
-    // app.use(BASE_PATH, authMiddleware.verifyUser, currentUserRoutes.routes());
+    app.use(BASE_PATH, authMiddleware.verifyUser, currentUserRoutes.routes());
     // app.use(BASE_PATH, authMiddleware.verifyUser, postRoutes.routes());
     // app.use(BASE_PATH, authMiddleware.verifyUser, reactionRoutes.routes());
     // app.use(BASE_PATH, authMiddleware.verifyUser, commentRoutes.routes());
