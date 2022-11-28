@@ -11,6 +11,11 @@ import { BadRequestError } from '@global/helpers/error-handler';
 import HTTP_STATUS from 'http-status-codes';
 import { IUserDocument } from '@user/interfaces/user.interface';
 import { UserCache } from '@service/redis/user.cache';
+import { omit } from 'lodash';
+import { authQueue } from './../../../shared/services/queues/auth.queue';
+import { userQueue } from '@service/queues/user.queue';
+import { config } from '@root/config';
+import JWT from 'jsonwebtoken';
 
 const userCache: UserCache = new UserCache();
 
@@ -42,34 +47,36 @@ export class SignUp {
       throw new BadRequestError('File upload: Error occurred. Try again.');
     }
 
-    res.status(HTTP_STATUS.CREATED).json({ message: 'user created successfully', authData });
-
     // Add to redis cache
     const userDataForCache: IUserDocument = SignUp.prototype.userData(authData, userObjectId);
     userDataForCache.profilePicture = `https://res.cloudinary.com/dq2nawkx9/image/upload/v${result.version}/${userObjectId}`;
     await userCache.saveUserToCache(`${userObjectId}`, uId, userDataForCache);
 
     // Add to database
-    // authQueue.addAuthUserJob('addAuthUserToDB', { value: authData });
-    // userQueue.addUserJob('addUserToDB', { value: userDataForCache });
+    omit(userDataForCache, ['uid', 'username', 'email', 'avatarColor', 'password']);
 
-    // const userJwt: string = SignUp.prototype.signToken(authData, userObjectId);
-    // req.session = { jwt: userJwt };
-    // res.status(HTTP_STATUS.CREATED).json({ message: 'User created successfully', user: userDataForCache, token: userJwt });
+    authQueue.addAuthUserJob('addAuthUserToDB', { value: authData });
+    userQueue.addUserJob('addUserToDB', { value: userDataForCache });
+
+    const userJwt: string = SignUp.prototype.signToken(authData, userObjectId);
+    req.session = { jwt: userJwt };
+    console.log(req.session);
+
+    res.status(HTTP_STATUS.CREATED).json({ message: 'User created successfully', user: userDataForCache, token: userJwt });
   }
 
-  // private signToken(data: IAuthDocument, userObjectId: ObjectId): string {
-  //   return JWT.sign(
-  //     {
-  //       userId: userObjectId,
-  //       uId: data.uId,
-  //       email: data.email,
-  //       username: data.username,
-  //       avatarColor: data.avatarColor
-  //     },
-  //     config.JWT_TOKEN!
-  //   );
-  // }
+  private signToken(data: IAuthDocument, userObjectId: ObjectId): string {
+    return JWT.sign(
+      {
+        userId: userObjectId,
+        uId: data.uId,
+        email: data.email,
+        username: data.username,
+        avatarColor: data.avatarColor
+      },
+      config.JWT_TOKEN!
+    );
+  }
 
   private signupData(data: ISignUpData): IAuthDocument {
     const { _id, username, email, uId, password, avatarColor } = data;
