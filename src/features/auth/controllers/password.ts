@@ -12,7 +12,7 @@ import { IResetPasswordParams } from '@user/interfaces/user.interface';
 import { resetPasswordTemplate } from '@service/emails/templates/reset-password/reset-password-template';
 import { BadRequestError } from '@global/helpers/error-handler';
 import { authService } from '@service/db/auth.service';
-import { emailSchema, passwordSchema } from '@auth/schemas/password';
+import { emailSchema, passwordSchema } from '@auth/schemes/password';
 
 export class Password {
   @joiValidation(emailSchema)
