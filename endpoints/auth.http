@@ -35,26 +35,26 @@ withCredentials: true
 
 {
   "username": "shahin",
-  "password": "shahin"
+  "password": "shahin01"
 }
 
-# ###
-# POST {{baseUrl}}/{{urlPath}}/forgot-password
-# Content-Type: application/json
-# Accept: application/json
-# withCredentials: true
+####
+POST {{baseUrl}}/{{urlPath}}/forgot-password
+Content-Type: application/json
+Accept: application/json
+withCredentials: true
 
-# {
-#   "email": ""
-# }
+{
+  "email": "s@mail.com"
+}
 
-# ###
-# POST {{baseUrl}}/{{urlPath}}/reset-password/<token>
-# Content-Type: application/json
-# Accept: application/json
-# withCredentials: true
+####
+POST {{baseUrl}}/{{urlPath}}/reset-password/c2ad7fabc862820cdd016b4fa79247fc2bd9e953
+Content-Type: application/json
+Accept: application/json
+withCredentials: true
 
-# {
-#   "password": "",
-#   "confirmPassword": ""
-# }
+{
+  "password": "shahin01",
+  "confirmPassword": "shahin01"
+}
