@@ -11,7 +11,7 @@ import { emailQueue } from '@service/queues/email.queue';
 import { IResetPasswordParams } from '@user/interfaces/user.interface';
 import { resetPasswordTemplate } from '@service/emails/templates/reset-password/reset-password-template';
 import { BadRequestError } from '@global/helpers/error-handler';
-import { authService } from '@service/db/auth.services';
+import { authService } from '@service/db/auth.service';
 import { emailSchema, passwordSchema } from '@auth/schemas/password';
 
 export class Password {

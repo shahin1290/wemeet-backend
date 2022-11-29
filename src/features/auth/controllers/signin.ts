@@ -8,7 +8,7 @@ import { BadRequestError } from '@global/helpers/error-handler';
 import { userService } from '@service/db/user.service';
 import { IResetPasswordParams, IUserDocument } from '@user/interfaces/user.interface';
 import { loginSchema } from '@auth/schemas/signin';
-import { authService } from '@service/db/auth.services';
+import { authService } from '@service/db/auth.service';
 import { forgotPasswordTemplate } from '@service/emails/templates/forgot-password/forgot-password-template';
 import { emailQueue } from '@service/queues/email.queue';
 import moment from 'moment';
