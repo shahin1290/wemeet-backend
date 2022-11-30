@@ -15,6 +15,9 @@ import { createClient } from 'redis';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { CustomError, IErrorResponse } from '@global/helpers/error-handler';
 import { SocketIOPostHandler } from '@socket/post';
+import { SocketIOFollowerHandler } from '@socket/follower';
+import { SocketIOUserHandler } from '@socket/user';
+import { SocketIONotificationHandler } from '@socket/notification';
 
 const SERVER_PORT = 5000;
 const log: Logger = config.createLogger('server');
@@ -61,7 +64,6 @@ export class WeMeetServer {
     app.use(json({ limit: '50mb' }));
     app.use(urlencoded({ extended: true, limit: '50mb' }));
   }
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   private routesMidleware(app: Application): void {
     applicationRoutes(app);
   }
@@ -114,6 +116,17 @@ export class WeMeetServer {
 
   private socketIOConnections(io: Server): void {
     const postSocketHandler: SocketIOPostHandler = new SocketIOPostHandler(io);
+    const followerSocketHandler: SocketIOFollowerHandler = new SocketIOFollowerHandler(io);
+    const userSocketHandler: SocketIOUserHandler = new SocketIOUserHandler(io);
+    // const chatSocketHandler: SocketIOChatHandler = new SocketIOChatHandler(io);
+    const notificationSocketHandler: SocketIONotificationHandler = new SocketIONotificationHandler();
+    // const imageSocketHandler: SocketIOImageHandler = new SocketIOImageHandler();
+
     postSocketHandler.listen();
+    followerSocketHandler.listen();
+    userSocketHandler.listen();
+    // chatSocketHandler.listen();
+    notificationSocketHandler.listen(io);
+    // imageSocketHandler.listen(io);
   }
 }
