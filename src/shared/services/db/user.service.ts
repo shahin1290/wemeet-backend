@@ -1,4 +1,4 @@
-import { IBasicInfo, ISearchUser, IUserDocument, ISocialLinks, INotificationSettings } from '@user/interfaces/user.interface';
+import { IBasicInfo, IUserDocument, ISocialLinks, INotificationSettings } from '@user/interfaces/user.interface';
 import mongoose from 'mongoose';
 import { indexOf } from 'lodash';
 // import { followerService } from '@service/db/follower.service';
