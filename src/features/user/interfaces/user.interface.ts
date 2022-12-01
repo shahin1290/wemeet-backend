@@ -53,6 +53,13 @@ export interface ISocialLinks {
   twitter: string;
   youtube: string;
 }
+export interface ISearchUser {
+  _id: string;
+  profilePicture: string;
+  username: string;
+  email: string;
+  avatarColor: string;
+}
 
 export interface ISocketData {
   blockedUser: string;
