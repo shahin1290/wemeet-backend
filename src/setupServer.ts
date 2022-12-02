@@ -8,11 +8,19 @@ import cookieSession from 'cookie-session';
 import HTTP_STATUS from 'http-status-codes';
 import 'express-async-errors';
 import Logger from 'bunyan';
-import { config } from './config';
+import apiStats from 'swagger-stats';
+import applicationRoutes from '@root/routes';
+import { config } from '@root/config';
 import { Server } from 'socket.io';
 import { createClient } from 'redis';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { CustomError, IErrorResponse } from './shared/globals/helpers/error-handler';
+import { CustomError, IErrorResponse } from '@global/helpers/error-handler';
+import { SocketIOPostHandler } from '@socket/post';
+import { SocketIOFollowerHandler } from '@socket/follower';
+import { SocketIOUserHandler } from '@socket/user';
+import { SocketIONotificationHandler } from '@socket/notification';
+import { SocketIOImageHandler } from '@socket/image';
+import { SocketIOChatHandler } from '@socket/chat';
 
 const SERVER_PORT = 5000;
 const log: Logger = config.createLogger('server');
@@ -27,18 +35,21 @@ export class WeMeetServer {
   public start(): void {
     this.securityMidleware(this.app);
     this.standardMidleware(this.app);
-    // this.routeMidleware(this.app);
+    this.routesMidleware(this.app);
+    this.apiMonitoring(this.app);
     this.globalErrorHandler(this.app);
     this.startServer(this.app);
   }
 
   private securityMidleware(app: Application): void {
+    app.set('trust proxy', 1);
     app.use(
       cookieSession({
         name: 'session',
         keys: [config.SECRET_KEY_ONE!, config.SECRET_KEY_TWO!],
         maxAge: 24 * 7 * 3600000,
         secure: config.NODE_ENV !== 'development'
+        // sameSite: 'none' // comment this line when running the server locally
       })
     );
     app.use(hpp());
@@ -57,7 +68,16 @@ export class WeMeetServer {
     app.use(json({ limit: '50mb' }));
     app.use(urlencoded({ extended: true, limit: '50mb' }));
   }
-  // private routeMidleware(app: Application): void {}
+  private routesMidleware(app: Application): void {
+    applicationRoutes(app);
+  }
+  private apiMonitoring(app: Application): void {
+    app.use(
+      apiStats.getMiddleware({
+        uriPath: '/api-monitoring'
+      })
+    );
+  }
 
   private globalErrorHandler(app: Application): void {
     app.all('*', (req: Request, res: Response) => {
@@ -74,11 +94,14 @@ export class WeMeetServer {
   }
 
   private async startServer(app: Application): Promise<void> {
+    if (!config.JWT_TOKEN) {
+      throw new Error('JWT Token must be Provided');
+    }
     try {
       const httpServer: http.Server = new http.Server(app);
       const socketIO: Server = await this.createSocketIO(httpServer);
       this.startHttpServer(httpServer);
-      // this.socketIOConnections(socketIO);
+      this.socketIOConnections(socketIO);
     } catch (error) {
       log.error(error);
     }
@@ -100,10 +123,25 @@ export class WeMeetServer {
   }
 
   private startHttpServer(httpServer: http.Server): void {
+    log.info(`Worker with process id of ${process.pid} has started...`);
     log.info(`Server has started with process ${process.pid}`);
 
     httpServer.listen(SERVER_PORT, () => log.info(`Server running on port ${SERVER_PORT}`));
   }
 
-  // private socketIOConnections(io: Server): void {}
+  private socketIOConnections(io: Server): void {
+    const postSocketHandler: SocketIOPostHandler = new SocketIOPostHandler(io);
+    const followerSocketHandler: SocketIOFollowerHandler = new SocketIOFollowerHandler(io);
+    const userSocketHandler: SocketIOUserHandler = new SocketIOUserHandler(io);
+    const chatSocketHandler: SocketIOChatHandler = new SocketIOChatHandler(io);
+    const notificationSocketHandler: SocketIONotificationHandler = new SocketIONotificationHandler();
+    const imageSocketHandler: SocketIOImageHandler = new SocketIOImageHandler();
+
+    postSocketHandler.listen();
+    followerSocketHandler.listen();
+    userSocketHandler.listen();
+    chatSocketHandler.listen();
+    notificationSocketHandler.listen(io);
+    imageSocketHandler.listen(io);
+  }
 }
