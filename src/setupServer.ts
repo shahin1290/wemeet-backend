@@ -8,6 +8,7 @@ import cookieSession from 'cookie-session';
 import HTTP_STATUS from 'http-status-codes';
 import 'express-async-errors';
 import Logger from 'bunyan';
+import apiStats from 'swagger-stats';
 import applicationRoutes from '@root/routes';
 import { config } from '@root/config';
 import { Server } from 'socket.io';
@@ -35,6 +36,7 @@ export class WeMeetServer {
     this.securityMidleware(this.app);
     this.standardMidleware(this.app);
     this.routesMidleware(this.app);
+    this.apiMonitoring(this.app);
     this.globalErrorHandler(this.app);
     this.startServer(this.app);
   }
@@ -69,6 +71,13 @@ export class WeMeetServer {
   private routesMidleware(app: Application): void {
     applicationRoutes(app);
   }
+  private apiMonitoring(app: Application): void {
+    app.use(
+      apiStats.getMiddleware({
+        uriPath: '/api-monitoring'
+      })
+    );
+  }
 
   private globalErrorHandler(app: Application): void {
     app.all('*', (req: Request, res: Response) => {
@@ -85,6 +94,9 @@ export class WeMeetServer {
   }
 
   private async startServer(app: Application): Promise<void> {
+    if (!config.JWT_TOKEN) {
+      throw new Error('JWT Token must be Provided');
+    }
     try {
       const httpServer: http.Server = new http.Server(app);
       const socketIO: Server = await this.createSocketIO(httpServer);
@@ -111,6 +123,7 @@ export class WeMeetServer {
   }
 
   private startHttpServer(httpServer: http.Server): void {
+    log.info(`Worker with process id of ${process.pid} has started...`);
     log.info(`Server has started with process ${process.pid}`);
 
     httpServer.listen(SERVER_PORT, () => log.info(`Server running on port ${SERVER_PORT}`));

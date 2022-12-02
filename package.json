@@ -4,14 +4,18 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start": "nodemon ./build/src/app.js",
+    "start": "SET NODE_ENV=production pm2 start build/src/app.js -i 5 --watch | bunyan",
+    "stop": "pm2 stop all",
+    "delete": "pm2 delete all",
     "dev": "nodemon -r tsconfig-paths/register src/app.ts | bunyan",
     "lint:check": "eslint \"src/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" --fix",
     "prettier:check": "prettier --check \"src/**/*.{ts,json}\"",
     "prettier:fix": "prettier --write \"src/**/*.{ts,json}\"",
     "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
-    "test": "jest --coverage=true -w=1 --forceExit --detectOpenHandles --watchAll=false"
+    "test": "jest --coverage=true -w=1 --forceExit --detectOpenHandles --watchAll=false",
+    "seeds:dev": "npx ts-node src/seeds.ts",
+    "seeds:prod": "node ./build/src/seeds.js"
   },
   "keywords": [],
   "author": "",
@@ -29,6 +33,8 @@
     "@types/jsonwebtoken": "^8.5.9",
     "@types/lodash": "^4.14.190",
     "@types/nodemailer": "^6.4.6",
+    "@types/redis-info": "^3.0.0",
+    "@types/swagger-stats": "^0.95.6",
     "@typescript-eslint/eslint-plugin": "^5.44.0",
     "@typescript-eslint/parser": "^5.44.0",
     "eslint": "^8.28.0",
@@ -43,6 +49,7 @@
   "dependencies": {
     "@bull-board/express": "^4.6.4",
     "@bull-board/ui": "^4.6.4",
+    "@faker-js/faker": "^7.6.0",
     "@jest/types": "^29.3.1",
     "@sendgrid/mail": "^7.7.0",
     "@socket.io/redis-adapter": "^7.2.0",
@@ -51,6 +58,7 @@
     "bcryptjs": "^2.4.3",
     "bull": "^4.10.2",
     "bunyan": "^1.8.15",
+    "canvas": "^2.10.2",
     "cloudinary": "^1.32.0",
     "compression": "^1.7.4",
     "cookie-session": "^2.0.0",
@@ -71,6 +79,7 @@
     "nodemailer": "^6.8.0",
     "redis": "^4.2.0",
     "socket.io": "^4.5.4",
+    "swagger-stats": "^0.99.2",
     "tsc-alias": "^1.7.1",
     "ttypescript": "^1.5.13",
     "typescript-transform-paths": "^3.4.4"
